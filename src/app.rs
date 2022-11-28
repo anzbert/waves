@@ -1,4 +1,4 @@
-use crate::engine::{Engine, EngineFn};
+use crate::engine::Engine;
 use egui::{
     plot::{HLine, Line, Plot, PlotPoints, VLine},
     Vec2,
@@ -14,7 +14,7 @@ pub struct WavesApp {
     frame_size: usize,
     engine: Engine,
     // tx: Sender<EngineFn>,
-    func: Arc<Mutex<EngineFn>>,
+    // func: Arc<Mutex<EngineFn>>,
 }
 
 impl WavesApp {
@@ -24,15 +24,13 @@ impl WavesApp {
     /// `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         // let (tx, rx) = mpsc::channel::<EngineFn>();
-        let func = Arc::new(Mutex::new(EngineFn::new()));
-        let func_clone = Arc::clone(&func);
+
         Self {
             phase: 0.,
             freq: 440.,
             frame_size: 2048,
-            engine: Engine::new(func_clone),
+            engine: Engine::new(),
             // tx,
-            func,
         }
     }
 }
@@ -88,8 +86,6 @@ impl eframe::App for WavesApp {
             // );
 
             let iter = (0..2048).map(|x| [x as f64, (func)(x as f64)]);
-
-            self.func.lock().unwrap().func = Box::new(func);
 
             let plot = PlotPoints::from_iter(iter);
 

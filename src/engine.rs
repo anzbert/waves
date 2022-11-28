@@ -1,22 +1,25 @@
-use crate::cpal::AudioPlatformCpal;
+use crate::{
+    cpal::AudioPlatformCpal,
+    gen::{GenSine, GenUnit},
+};
 use cpal::{OutputCallbackInfo, Sample, Stream};
-use std::sync::{mpsc::Receiver, Arc, Mutex};
+// use std::sync::{mpsc::Receiver, Arc, Mutex};
 
 // pub type EngineFn = impl FnMut;
 
-#[derive(Clone)]
-pub struct EngineFn {
-    pub func: Box<dyn FnMut(f64) -> f64 + Send>,
-}
+// #[derive(Clone)]
+// pub struct EngineFn {
+//     // pub func: Box<dyn FnMut(f64) -> f64 + Send>,
+// }
 
-impl EngineFn {
-    pub fn new() -> Self {
-        let def = |x: f64| 0.;
-        Self {
-            func: Box::new(def),
-        }
-    }
-}
+// impl EngineFn {
+//     pub fn new() -> Self {
+//         let def = |x: f64| 0.;
+//         Self {
+//             func: Box::new(def),
+//         }
+//     }
+// }
 
 pub struct Engine {
     pub cpal: AudioPlatformCpal,
@@ -24,11 +27,13 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(func: Arc<Mutex<EngineFn>>) -> Self {
+    pub fn new() -> Self {
         let cpal = AudioPlatformCpal::new();
         let mut sample_clock: u64 = 0;
-        let mut function = EngineFn::new();
+        // let mut function = EngineFn::new();
         // let sample_time = Duration::from_secs(1).div_f64(config.sample_rate.0 as f64);
+
+        let mut gen = GenSine::new(0., cpal.config.sample_rate.0 as f64);
 
         let stream = cpal.build_stream(move |data: &mut [f32], _info: &OutputCallbackInfo| {
             // let output_latency = info
@@ -37,10 +42,10 @@ impl Engine {
             //     .duration_since(&info.timestamp().callback)
             //     .unwrap_or_default();
 
-            match func.try_lock() {
-                Ok(func) => function.func = func.func,
-                Err(_) => {}
-            }
+            // match func.try_lock() {
+            //     Ok(func) => function.func = func.func,
+            //     Err(_) => {}
+            // }
 
             // Size of provided output buffer for one channel in samples
             assert!(data.len() % cpal.config.channels as usize == 0);
@@ -49,7 +54,7 @@ impl Engine {
             // SYNTH /////////////////////////////////////////////////
             let mut buffer: Vec<f32> = Vec::with_capacity(buffer_size);
             for s in 0..buffer_size {
-                buffer.push((function.func)((sample_clock + s as u64) as f64) as f32);
+                buffer.push(gen.sample(0.1, 220.) as f32);
             }
 
             // ///////////////////////////////////////////////////////

@@ -4,4 +4,5 @@ mod app;
 mod cpal;
 mod engine;
 mod gen;
+mod utils;
 pub use app::WavesApp;
